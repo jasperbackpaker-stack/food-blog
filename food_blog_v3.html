@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美食部落格產生器 Pro v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#1a1714;--ink2:#4a4540;--ink3:#8a8480;
+  --paper:#faf8f5;--paper2:#f3f0eb;--paper3:#ede9e2;
+  --border:#ddd9d0;--border2:#ccc8be;
+  --accent:#8b5e3c;--accent-bg:#f5ede4;
+  --green:#3d6b4f;--green-bg:#e8f2ec;
+  --red:#c0392b;--red-bg:#fdf0ee;
+  --gold:#9a7b3a;--gold-bg:#faf3e0;
+  --radius:10px;
+}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;min-height:100vh}
+
+/* Layout */
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+
+/* Sidebar */
+.sidebar{background:var(--ink);color:#e8e4de;padding:28px 20px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.sidebar-logo{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:600;color:#e8e4de;letter-spacing:.08em;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:14px;line-height:1.5}
+.sidebar-logo span{display:block;font-size:11px;font-weight:300;color:rgba(255,255,255,.4);margin-top:4px;letter-spacing:.12em}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.55);transition:all .2s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
+.nav-item.active{background:var(--accent);color:#fff}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;opacity:.5}
+.nav-item.active .nav-dot,.nav-item.done .nav-dot{opacity:1;background:#7dcea0}
+.nav-item.done{color:rgba(255,255,255,.7)}
+.nav-divider{height:1px;background:rgba(255,255,255,.08);margin:8px 0}
+.sidebar-footer{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
+.api-status{font-size:11px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:6px}
+.api-dot{width:6px;height:6px;border-radius:50%;background:#666;flex-shrink:0}
+.api-dot.ok{background:#7dcea0}
+
+/* Main */
+.main{padding:36px 40px;max-width:800px}
+.page{display:none}
+.page.active{display:block}
+
+/* Page header */
+.pg-hdr{margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.pg-hdr h2{font-family:'Noto Serif TC',serif;font-size:22px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.pg-hdr p{font-size:13px;color:var(--ink3)}
+
+/* Cards */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:18px}
+.card-title{font-size:12px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title .ai-tag{background:var(--accent-bg);color:var(--accent);font-size:10px;padding:2px 7px;border-radius:10px;letter-spacing:.05em}
+
+/* Form elements */
+.fgrp{margin-bottom:16px}
+.fgrp:last-child{margin-bottom:0}
+label{display:block;font-size:12px;font-weight:500;color:var(--ink2);margin-bottom:5px;letter-spacing:.02em}
+.hint{font-size:11px;color:var(--ink3);margin-top:3px}
+input[type=text],input[type=password],input[type=url],textarea,select{
+  width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;
+  font-size:13px;font-family:'Noto Sans TC',sans-serif;background:#fff;color:var(--ink);
+  transition:border .15s,box-shadow .15s
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,94,60,.1)}
+textarea{resize:vertical;min-height:80px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* URL input with preview */
+.url-input-wrap{position:relative}
+.url-preview{width:100%;height:120px;object-fit:cover;border-radius:6px;margin-top:6px;display:none;border:1px solid var(--border)}
+.url-preview.show{display:block}
+
+/* Multi URL */
+.url-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.url-row{display:flex;gap:6px;align-items:center}
+.url-row input{flex:1}
+.btn-icon{padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--ink2);cursor:pointer;font-size:13px;transition:all .15s;flex-shrink:0}
+.btn-icon:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Days checkboxes */
+.days-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.day-cb{display:none}
+.day-lbl{padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s;user-select:none;color:var(--ink2)}
+.day-cb:checked+.day-lbl{background:var(--red);border-color:var(--red);color:#fff}
+
+/* Style selector */
+.style-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.style-pill{padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--ink2);background:#fff}
+.style-pill.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* Suitable tags */
+.suitable-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.suitable-tag{padding:5px 11px;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--ink2);background:#fff}
+.suitable-tag.on{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+
+/* Stars rating */
+.stars-group{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.star-item label{font-size:12px;color:var(--ink2);margin-bottom:6px}
+.stars{display:flex;gap:3px}
+.star{font-size:20px;cursor:pointer;color:#ddd;transition:color .1s;line-height:1}
+.star.on{color:#e8a020}
+
+/* Dish cards */
+.dish-item{background:var(--paper2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:10px;transition:border .2s}
+.dish-item.ai-done{border-color:var(--green)}
+.dish-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.dish-num{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dish-name-display{font-size:13px;font-weight:500;flex:1;color:var(--ink)}
+.dish-status{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--paper3);color:var(--ink3);border:1px solid var(--border)}
+.dish-status.done{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.ai-desc-box{margin-top:12px;padding:14px;background:#fff;border-radius:8px;border:1px solid var(--green);display:none}
+.ai-desc-box.show{display:block}
+.ai-desc-box .ai-lbl{font-size:10px;font-weight:500;color:var(--green);letter-spacing:.08em;margin-bottom:6px;text-transform:uppercase}
+.ai-desc-box p{font-size:13px;line-height:1.9;color:var(--ink2)}
+.ai-desc-box .search-ref{font-size:11px;color:var(--ink3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+
+/* Buttons */
+.btn{padding:9px 20px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all .15s;background:#fff;color:var(--ink)}
+.btn:hover{border-color:var(--ink2);background:var(--paper2)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--ink);color:#fff;border-color:var(--ink);width:100%;padding:13px;font-size:14px;border-radius:9px}
+.btn-primary:hover{background:#2d2823}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-accent:hover{background:#7a4f2e}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-green:hover{background:#2f5540}
+.btn-danger{border-color:#e8b4b0;color:var(--red)}
+.btn-danger:hover{background:var(--red-bg)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-outline{background:transparent;width:100%;margin-top:8px;border-style:dashed}
+
+/* API box */
+.api-box{border:1px solid var(--border);border-radius:var(--radius);padding:20px;background:#fff;margin-bottom:18px}
+.api-box.ok{border-color:var(--green);background:var(--green-bg)}
+.api-row{display:flex;gap:8px;margin-top:10px}
+.api-row input{flex:1}
+
+/* Progress */
+.gen-progress{display:none;margin-top:16px;padding:18px;background:var(--gold-bg);border:1px solid #e8d5a0;border-radius:var(--radius)}
+.prog-title{font-size:13px;font-weight:500;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.spin{width:14px;height:14px;border:2px solid #e8d5a0;border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.prog-bar-wrap{background:rgba(0,0,0,.08);border-radius:3px;height:3px;margin:10px 0}
+.prog-bar{height:3px;border-radius:3px;background:var(--gold);transition:width .4s}
+.prog-steps{font-size:12px;color:var(--ink2);line-height:2}
+.prog-steps .s-done{color:var(--green)}
+.prog-steps .s-active{color:var(--gold);font-weight:500}
+.prog-steps .s-wait{color:var(--ink3)}
+
+/* Output section */
+.out-section{display:none;margin-top:28px}
+.out-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
+.out-tab{padding:8px 18px;font-size:13px;cursor:pointer;border-radius:8px 8px 0 0;color:var(--ink3);border:1px solid transparent;border-bottom:none;transition:all .15s;background:none;font-family:'Noto Sans TC',sans-serif;margin-bottom:-1px}
+.out-tab.active{background:#fff;color:var(--ink);border-color:var(--border);border-bottom-color:#fff}
+.out-pane{display:none}
+.out-pane.active{display:block}
+.out-box{background:var(--paper2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.out-box label{font-size:11px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:8px}
+.out-box textarea{min-height:300px;font-family:'Courier New',monospace;font-size:12px;line-height:1.7;background:var(--paper)}
+.copy-row{display:flex;gap:8px;margin-top:8px}
+.seo-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.seo-card .seo-t{font-size:17px;color:#1a0dab;font-weight:400;margin-bottom:2px}
+.seo-card .seo-u{font-size:12px;color:#006621;margin-bottom:6px}
+.seo-card .seo-d{font-size:13px;color:#545454;line-height:1.6}
+.preview-frame{width:100%;height:640px;border:1px solid var(--border);border-radius:var(--radius)}
+
+/* Auto-filled tag */
+.auto-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;background:var(--accent-bg);color:var(--accent);font-size:12px;margin:2px}
+.auto-info{font-size:12px;color:var(--ink3);padding:8px 10px;background:var(--paper2);border-radius:6px;border:1px dashed var(--border);min-height:34px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+
+/* Alert */
+.alert{padding:10px 14px;border-radius:7px;font-size:12px;margin-bottom:12px}
+.alert-warn{background:var(--gold-bg);color:var(--gold);border:1px solid #e8d5a0}
+.alert-ok{background:var(--green-bg);color:var(--green);border:1px solid #b8d8c4}
+
+@media(max-width:768px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .main{padding:20px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    美食部落格產生器
+    <span>PRO v3 · 文藝風格</span>
+  </div>
+
+  <button class="nav-item active" onclick="goTo(0,this)" id="nav0">
+    <span class="nav-dot"></span>API 設定
+  </button>
+  <button class="nav-item" onclick="goTo(1,this)" id="nav1">
+    <span class="nav-dot"></span>餐廳基本資訊
+  </button>
+  <button class="nav-item" onclick="goTo(2,this)" id="nav2">
+    <span class="nav-dot"></span>餐廳照片
+  </button>
+  <button class="nav-item" onclick="goTo(3,this)" id="nav3">
+    <span class="nav-dot"></span>招牌餐點
+  </button>
+  <button class="nav-item" onclick="goTo(4,this)" id="nav4">
+    <span class="nav-dot"></span>風格 & 評分
+  </button>
+  <button class="nav-item" onclick="goTo(5,this)" id="nav5">
+    <span class="nav-dot"></span>生成部落格
+  </button>
+
+  <div class="sidebar-footer">
+    <div class="api-status">
+      <div class="api-dot" id="api-dot"></div>
+      <span id="api-status-text">尚未設定 API Key</span>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+<!-- Page 0: API -->
+<div class="page active" id="pg0">
+  <div class="pg-hdr">
+    <h2>API 設定</h2>
+    <p>輸入 Anthropic API Key 以啟用 AI 自動搜尋與生成功能</p>
+  </div>
+  <div class="api-box" id="api-box">
+    <div class="card-title">Anthropic API Key</div>
+    <div class="api-row">
+      <input type="password" id="api-key" placeholder="sk-ant-api03-..." />
+      <button class="btn btn-accent btn-sm" onclick="saveKey()">儲存</button>
+      <button class="btn btn-danger btn-sm" id="clear-btn" style="display:none" onclick="clearKey()">清除</button>
+    </div>
+    <div class="hint" style="margin-top:8px">金鑰僅儲存於本機，不會傳送至第三方。<a href="https://console.anthropic.com" style="color:var(--accent)">前往申請 →</a></div>
+  </div>
+  <div style="text-align:right;margin-top:8px">
+    <button class="btn btn-accent" onclick="goTo(1,document.getElementById('nav1'))">下一步 →</button>
+  </div>
+</div>
+
+<!-- Page 1: Restaurant Info -->
+<div class="page" id="pg1">
+  <div class="pg-hdr">
+    <h2>餐廳基本資訊</h2>
+    <p>填入餐廳名稱與地址，AI 會自動搜尋電話、營業時間、附近地標等資訊</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">必填資訊</div>
+    <div class="grid2">
+      <div class="fgrp">
+        <label>餐廳名稱 *</label>
+        <input type="text" id="r-name" placeholder="例：禎美樓、微光森林" />
+      </div>
+      <div class="fgrp">
+        <label>料理類型</label>
+        <select id="r-type">
+          <option>台式料理</option><option>日式料理</option><option>義式料理</option>
+          <option>中式料理</option><option>港式料理</option><option>韓式料理</option>
+          <option>美式料理</option><option>早午餐</option><option>咖啡廳</option>
+          <option>甜點店</option><option>小吃攤</option><option>火鍋</option>
+          <option>燒烤</option><option>新中菜</option><option>創意料理</option>
+        </select>
+      </div>
+    </div>
+    <div class="fgrp">
+      <label>完整地址 *</label>
+      <input type="text" id="r-addr" placeholder="例：高雄市前金區中華三路65-6號" />
+      <div class="hint">AI 會根據地址自動搜尋附近大地標、電話、訂位連結</div>
+    </div>
+    <div class="grid2">
+      <div class="fgrp">
+        <label>價格區間</label>
+        <select id="r-price">
+          <option>100元以下</option>
+          <option>100–500元</option>
+          <option>500–1000元</option>
+          <option>1000元以上</option>
+        </select>
+      </div>
+      <div class="fgrp">
+        <label>停車資訊（選填）</label>
+        <input type="text" id="r-park" placeholder="例：附近有收費停車場" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">營業時間</div>
+    <div class="grid2">
+      <div class="fgrp">
+        <label>開始時間</label>
+        <input type="text" id="r-open" placeholder="例：11:00" />
+      </div>
+      <div class="fgrp">
+        <label>結束時間</label>
+        <input type="text" id="r-close" placeholder="例：21:30" />
+      </div>
+    </div>
+    <div class="fgrp">
+      <label>公休日（勾選休息的天）</label>
+      <div class="days-wrap">
+        <input type="checkbox" class="day-cb" id="d0" value="週一"><label class="day-lbl" for="d0">週一</label>
+        <input type="checkbox" class="day-cb" id="d1" value="週二"><label class="day-lbl" for="d1">週二</label>
+        <input type="checkbox" class="day-cb" id="d2" value="週三"><label class="day-lbl" for="d2">週三</label>
+        <input type="checkbox" class="day-cb" id="d3" value="週四"><label class="day-lbl" for="d3">週四</label>
+        <input type="checkbox" class="day-cb" id="d4" value="週五"><label class="day-lbl" for="d4">週五</label>
+        <input type="checkbox" class="day-cb" id="d5" value="週六"><label class="day-lbl" for="d5">週六</label>
+        <input type="checkbox" class="day-cb" id="d6" value="週日"><label class="day-lbl" for="d6">週日</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">AI 自動搜尋 <span class="ai-tag">填完名稱＋地址後自動補齊</span></div>
+    <div class="grid2">
+      <div class="fgrp">
+        <label>電話</label>
+        <div class="auto-info" id="auto-phone">生成時自動搜尋…</div>
+      </div>
+      <div class="fgrp">
+        <label>Line 訂位 / 官網</label>
+        <div class="auto-info" id="auto-line">生成時自動搜尋…</div>
+      </div>
+    </div>
+    <div class="fgrp">
+      <label>附近大地標</label>
+      <div class="auto-info" id="auto-landmark">生成時根據地址自動搜尋…</div>
+    </div>
+    <div class="fgrp">
+      <label>特色標籤</label>
+      <div class="auto-info" id="auto-tags">生成時自動搜尋餐廳口碑補齊…</div>
+    </div>
+    <div class="fgrp">
+      <label>主廚／老闆故事</label>
+      <div class="auto-info" id="auto-story">生成時搜尋近兩年部落格文章…</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">適合族群（可多選）</div>
+    <div class="suitable-wrap">
+      <span class="suitable-tag" data-v="家庭聚餐">家庭聚餐</span>
+      <span class="suitable-tag" data-v="情侶約會">情侶約會</span>
+      <span class="suitable-tag" data-v="朋友聚會">朋友聚會</span>
+      <span class="suitable-tag" data-v="商務宴客">商務宴客</span>
+      <span class="suitable-tag" data-v="獨旅一人">獨旅一人</span>
+      <span class="suitable-tag" data-v="親子同樂">親子同樂</span>
+      <span class="suitable-tag" data-v="網美打卡">網美打卡</span>
+      <span class="suitable-tag" data-v="長輩聚餐">長輩聚餐</span>
+    </div>
+  </div>
+
+  <div style="text-align:right;margin-top:8px">
+    <button class="btn btn-accent" onclick="goTo(2,document.getElementById('nav2'))">下一步 →</button>
+  </div>
+</div>
+
+<!-- Page 2: Photos -->
+<div class="page" id="pg2">
+  <div class="pg-hdr">
+    <h2>餐廳照片</h2>
+    <p>貼上 WordPress 媒體庫的圖片網址</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">門口照片</div>
+    <div class="fgrp">
+      <label>圖片網址</label>
+      <input type="url" id="img-entrance" placeholder="https://yoursite.com/wp-content/uploads/..." oninput="previewImg(this,'prev-entrance')" />
+      <img id="prev-entrance" class="url-preview" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">環境照片（可多張）</div>
+    <div id="env-list" class="url-list"></div>
+    <button class="btn btn-outline btn-sm" onclick="addEnvImg()">＋ 新增環境照片</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">菜單照片</div>
+    <div class="fgrp">
+      <label>圖片網址</label>
+      <input type="url" id="img-menu" placeholder="https://yoursite.com/wp-content/uploads/..." oninput="previewImg(this,'prev-menu')" />
+      <img id="prev-menu" class="url-preview" />
+    </div>
+  </div>
+
+  <div style="text-align:right;margin-top:8px">
+    <button class="btn btn-accent" onclick="goTo(3,document.getElementById('nav3'))">下一步 →</button>
+  </div>
+</div>
+
+<!-- Page 3: Dishes -->
+<div class="page" id="pg3">
+  <div class="pg-hdr">
+    <h2>招牌餐點</h2>
+    <p>填入餐點名稱與 WordPress 圖片網址，AI 自動搜尋並以老饕筆法生成描述</p>
+  </div>
+  <div id="dishes-wrap"></div>
+  <button class="btn btn-outline" onclick="addDish()">＋ 新增餐點</button>
+
+  <div style="text-align:right;margin-top:16px">
+    <button class="btn btn-accent" onclick="goTo(4,document.getElementById('nav4'))">下一步 →</button>
+  </div>
+</div>
+
+<!-- Page 4: Style & Rating -->
+<div class="page" id="pg4">
+  <div class="pg-hdr">
+    <h2>文章風格 & 評分</h2>
+    <p>選擇語言風格，並為這間餐廳打分數</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">語言風格</div>
+    <div class="style-pills" id="style-wrap">
+      <span class="style-pill on" data-s="文藝詩意風">文藝詩意風</span>
+      <span class="style-pill" data-s="道地台灣在地風">道地台灣在地風</span>
+      <span class="style-pill" data-s="輕鬆幽默風">輕鬆幽默風</span>
+      <span class="style-pill" data-s="網美IG風">網美IG風</span>
+      <span class="style-pill" data-s="專業食評風">專業食評風</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">推薦評分</div>
+    <div class="stars-group">
+      <div class="star-item">
+        <label>餐點美味度</label>
+        <div class="stars" id="stars-food" data-val="0">
+          <span class="star" onclick="setStar('food',1)">★</span><span class="star" onclick="setStar('food',2)">★</span><span class="star" onclick="setStar('food',3)">★</span><span class="star" onclick="setStar('food',4)">★</span><span class="star" onclick="setStar('food',5)">★</span>
+        </div>
+      </div>
+      <div class="star-item">
+        <label>服務品質</label>
+        <div class="stars" id="stars-service" data-val="0">
+          <span class="star" onclick="setStar('service',1)">★</span><span class="star" onclick="setStar('service',2)">★</span><span class="star" onclick="setStar('service',3)">★</span><span class="star" onclick="setStar('service',4)">★</span><span class="star" onclick="setStar('service',5)">★</span>
+        </div>
+      </div>
+      <div class="star-item">
+        <label>環境氛圍</label>
+        <div class="stars" id="stars-env" data-val="0">
+          <span class="star" onclick="setStar('env',1)">★</span><span class="star" onclick="setStar('env',2)">★</span><span class="star" onclick="setStar('env',3)">★</span><span class="star" onclick="setStar('env',4)">★</span><span class="star" onclick="setStar('env',5)">★</span>
+        </div>
+      </div>
+      <div class="star-item">
+        <label>CP 值</label>
+        <div class="stars" id="stars-cp" data-val="0">
+          <span class="star" onclick="setStar('cp',1)">★</span><span class="star" onclick="setStar('cp',2)">★</span><span class="star" onclick="setStar('cp',3)">★</span><span class="star" onclick="setStar('cp',4)">★</span><span class="star" onclick="setStar('cp',5)">★</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:right;margin-top:8px">
+    <button class="btn btn-accent" onclick="goTo(5,document.getElementById('nav5'))">下一步 →</button>
+  </div>
+</div>
+
+<!-- Page 5: Generate -->
+<div class="page" id="pg5">
+  <div class="pg-hdr">
+    <h2>生成部落格</h2>
+    <p>AI 將自動搜尋餐廳資料並以文藝筆法生成完整食記</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">生成摘要</div>
+    <div id="gen-summary" style="font-size:13px;color:var(--ink2);line-height:2">
+      請先完成前面步驟的填寫
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="gen-btn" onclick="generate()">✦ 開始 AI 搜尋 & 生成部落格</button>
+
+  <div class="gen-progress" id="gen-progress">
+    <div class="prog-title"><div class="spin"></div><span id="prog-title-text">準備中…</span></div>
+    <div class="prog-bar-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+    <div class="prog-steps" id="prog-steps"></div>
+  </div>
+
+  <div class="out-section" id="out-section">
+    <div class="seo-card">
+      <div style="font-size:11px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">SEO 預覽</div>
+      <div class="seo-t" id="seo-title-preview"></div>
+      <div class="seo-u" id="seo-url-preview"></div>
+      <div class="seo-d" id="seo-desc-preview"></div>
+    </div>
+    <div class="out-tabs">
+      <button class="out-tab active" onclick="switchTab('html',this)">HTML 文章</button>
+      <button class="out-tab" onclick="switchTab('preview',this)">網頁預覽</button>
+      <button class="out-tab" onclick="switchTab('meta',this)">Meta Tags</button>
+    </div>
+    <div class="out-pane active" id="pane-html">
+      <div class="out-box">
+        <label>HTML 內容（可直接貼入 WordPress）</label>
+        <textarea id="html-out" readonly></textarea>
+      </div>
+      <div class="copy-row">
+        <button class="btn btn-green btn-sm" onclick="copyHTML()">複製 HTML</button>
+        <button class="btn btn-sm" onclick="downloadHTML()">下載 .html</button>
+      </div>
+    </div>
+    <div class="out-pane" id="pane-preview">
+      <iframe id="preview-frame" class="preview-frame"></iframe>
+    </div>
+    <div class="out-pane" id="pane-meta">
+      <div class="out-box">
+        <label>Meta Tags</label>
+        <textarea id="meta-out" readonly style="min-height:160px;font-family:monospace;font-size:12px"></textarea>
+      </div>
+      <button class="btn btn-green btn-sm" onclick="copyMeta()" style="margin-top:8px">複製 Meta Tags</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /app -->
+
+<script>
+// ─── State ───────────────────────────────────────────────
+let apiKey = '';
+let dishes = [];
+let envImgs = [];
+let suitableTags = [];
+let selectedStyle = '文藝詩意風';
+let ratings = {food:0,service:0,env:0,cp:0};
+let generatedHTML = '';
+let dishCount = 0;
+
+// ─── Init ─────────────────────────────────────────────────
+function init() {
+  const k = localStorage.getItem('foodblog_v3_key');
+  if (k) { apiKey = k; setApiOk(); }
+  document.querySelectorAll('.suitable-tag').forEach(t => {
+    t.onclick = () => { t.classList.toggle('on'); updateSuitable(); };
+  });
+  document.querySelectorAll('#style-wrap .style-pill').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('#style-wrap .style-pill').forEach(x=>x.classList.remove('on'));
+      t.classList.add('on'); selectedStyle = t.dataset.s;
+    };
+  });
+  addEnvImg();
+  addDish();
+}
+function updateSuitable() {
+  suitableTags = [...document.querySelectorAll('.suitable-tag.on')].map(t=>t.dataset.v);
+}
+function setApiOk() {
+  document.getElementById('api-dot').classList.add('ok');
+  document.getElementById('api-status-text').textContent = 'API Key 已設定';
+  document.getElementById('api-box').classList.add('ok');
+  document.getElementById('api-box').innerHTML = `<div style="font-size:13px;font-weight:500;color:var(--green);margin-bottom:8px">✓ API Key 已設定</div><button class="btn btn-danger btn-sm" onclick="clearKey()">清除</button>`;
+}
+
+// ─── API Key ───────────────────────────────────────────────
+function saveKey() {
+  const v = document.getElementById('api-key').value.trim();
+  if (!v.startsWith('sk-ant-')) { alert('格式不正確，應以 sk-ant- 開頭'); return; }
+  apiKey = v; localStorage.setItem('foodblog_v3_key', v); setApiOk();
+}
+function clearKey() {
+  if (!confirm('確定清除？')) return;
+  localStorage.removeItem('foodblog_v3_key'); apiKey = ''; location.reload();
+}
+
+// ─── Navigation ───────────────────────────────────────────
+function goTo(n, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg'+n).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(n===5) updateSummary();
+}
+
+// ─── Photos ───────────────────────────────────────────────
+function previewImg(input, previewId) {
+  const prev = document.getElementById(previewId);
+  if (input.value) { prev.src = input.value; prev.classList.add('show'); }
+  else prev.classList.remove('show');
+}
+function addEnvImg() {
+  const id = 'env' + Date.now();
+  envImgs.push(id);
+  const row = document.createElement('div');
+  row.className = 'url-row';
+  row.id = 'row-' + id;
+  row.innerHTML = `
+    <input type="url" id="${id}" placeholder="https://yoursite.com/wp-content/uploads/..." oninput="previewImg(this,'prev-${id}')" />
+    <button class="btn-icon" onclick="removeEnvImg('${id}')">✕</button>
+  `;
+  document.getElementById('env-list').appendChild(row);
+  const prev = document.createElement('img');
+  prev.id = 'prev-' + id;
+  prev.className = 'url-preview';
+  document.getElementById('env-list').appendChild(prev);
+}
+function removeEnvImg(id) {
+  document.getElementById('row-'+id)?.remove();
+  document.getElementById('prev-'+id)?.remove();
+  envImgs = envImgs.filter(x=>x!==id);
+}
+
+// ─── Dishes ───────────────────────────────────────────────
+function addDish() {
+  dishCount++;
+  const id = 'dish' + dishCount;
+  dishes.push({id, name:'', imgUrl:'', note:'', aiDesc:'', searchRef:''});
+  renderDishes();
+}
+function renderDishes() {
+  const wrap = document.getElementById('dishes-wrap');
+  if (!dishes.length) { wrap.innerHTML='<p style="font-size:13px;color:var(--ink3);padding:12px 0">尚無餐點，請點下方新增</p>'; return; }
+  wrap.innerHTML = dishes.map((d,i) => `
+    <div class="dish-item ${d.aiDesc?'ai-done':''}" id="di-${d.id}">
+      <div class="dish-hdr">
+        <div class="dish-num">${i+1}</div>
+        <div class="dish-name-display">${d.name||'餐點 '+(i+1)}</div>
+        <div class="dish-status ${d.aiDesc?'done':''}" id="dstat-${d.id}">${d.aiDesc?'✓ 已生成':'待搜尋'}</div>
+        <button class="btn btn-danger btn-sm" onclick="removeDish('${d.id}')">刪除</button>
+      </div>
+      <div class="grid2">
+        <div class="fgrp">
+          <label>餐點名稱 *</label>
+          <input type="text" value="${d.name}" placeholder="例：招牌大腸麵線" oninput="updateDish('${d.id}','name',this.value)" />
+        </div>
+        <div class="fgrp">
+          <label>補充說明（選填）</label>
+          <input type="text" value="${d.note}" placeholder="例：加辣、大份量" oninput="updateDish('${d.id}','note',this.value)" />
+        </div>
+      </div>
+      <div class="fgrp">
+        <label>餐點圖片網址（WordPress）</label>
+        <input type="url" value="${d.imgUrl}" placeholder="https://yoursite.com/wp-content/uploads/..." oninput="updateDishImg('${d.id}',this)" />
+        ${d.imgUrl ? `<img src="${d.imgUrl}" class="url-preview show" style="height:100px" />` : ''}
+      </div>
+      ${d.aiDesc ? `<div class="ai-desc-box show">
+        <div class="ai-lbl">✦ AI 老饕描述</div>
+        <p>${d.aiDesc}</p>
+        ${d.searchRef ? `<div class="search-ref">搜尋參考：${d.searchRef}</div>` : ''}
+      </div>` : ''}
+    </div>`).join('');
+}
+function updateDish(id,field,val){const d=dishes.find(x=>x.id===id);if(d)d[field]=val;}
+function updateDishImg(id,inp){
+  const d=dishes.find(x=>x.id===id);
+  if(d){ d.imgUrl=inp.value; const imgs=inp.parentElement.querySelectorAll('.url-preview'); imgs.forEach(i=>i.remove()); if(inp.value){const img=document.createElement('img');img.src=inp.value;img.className='url-preview show';img.style.height='100px';inp.parentElement.appendChild(img);} }
+}
+function removeDish(id){dishes=dishes.filter(x=>x.id!==id);renderDishes();}
+
+// ─── Stars ────────────────────────────────────────────────
+function setStar(cat,val){
+  ratings[cat]=val;
+  const stars=document.querySelectorAll(`#stars-${cat} .star`);
+  stars.forEach((s,i)=>s.classList.toggle('on',i<val));
+  document.getElementById('stars-'+cat).dataset.val=val;
+}
+
+// ─── Summary ──────────────────────────────────────────────
+function updateSummary() {
+  const name = document.getElementById('r-name').value;
+  const addr = document.getElementById('r-addr').value;
+  const validDishes = dishes.filter(d=>d.name.trim());
+  document.getElementById('gen-summary').innerHTML = `
+    <span style="color:var(--ink)">餐廳：</span>${name||'（未填）'}<br>
+    <span style="color:var(--ink)">地址：</span>${addr||'（未填）'}<br>
+    <span style="color:var(--ink)">餐點數：</span>${validDishes.length} 道<br>
+    <span style="color:var(--ink)">風格：</span>${selectedStyle}<br>
+    <span style="color:var(--ink)">AI 將自動搜尋：</span>電話、地標、標籤、主廚故事、餐點描述、FAQ
+  `;
+}
+
+// ─── Tab switch ───────────────────────────────────────────
+function switchTab(name,btn){
+  document.querySelectorAll('.out-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.out-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pane-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='preview'&&generatedHTML) document.getElementById('preview-frame').srcdoc=generatedHTML;
+}
+
+// ─── Progress helpers ─────────────────────────────────────
+function setProgress(pct, title, steps) {
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-title-text').textContent = title;
+  if (steps) {
+    document.getElementById('prog-steps').innerHTML = steps.map(s=>
+      `<div class="s-${s.status}">${s.status==='done'?'✓':s.status==='active'?'▶':'○'} ${s.label}</div>`
+    ).join('');
+  }
+}
+
+// ─── AI call ─────────────────────────────────────────────
+async function callAI(prompt, useSearch=false, maxTokens=1200) {
+  const body = { model:'claude-sonnet-4-20250514', max_tokens:maxTokens, messages:[{role:'user',content:prompt}] };
+  if (useSearch) body.tools = [{type:'web_search_20250305',name:'web_search'}];
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify(body)
+  });
+  if (!res.ok) { const e=await res.json(); throw new Error(e.error?.message||`HTTP ${res.status}`); }
+  const data = await res.json();
+  const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+  const queries = data.content.filter(b=>b.type==='tool_use').map(b=>b.input?.query).filter(Boolean);
+  return {text, queries};
+}
+
+// ─── Main generate ────────────────────────────────────────
+async function generate() {
+  if (!apiKey) { alert('請先設定 API Key'); goTo(0,document.getElementById('nav0')); return; }
+  const rName = document.getElementById('r-name').value.trim();
+  const rAddr = document.getElementById('r-addr').value.trim();
+  if (!rName||!rAddr) { alert('請填寫餐廳名稱和地址'); return; }
+  const validDishes = dishes.filter(d=>d.name.trim());
+  if (!validDishes.length) { alert('請至少新增一道餐點'); return; }
+
+  document.getElementById('gen-btn').disabled = true;
+  document.getElementById('gen-progress').style.display = 'block';
+  document.getElementById('out-section').style.display = 'none';
+
+  const info = {
+    name: rName, type: document.getElementById('r-type').value,
+    addr: rAddr, price: document.getElementById('r-price').value,
+    open: document.getElementById('r-open').value, close: document.getElementById('r-close').value,
+    closedDays: [...document.querySelectorAll('.day-cb:checked')].map(c=>c.value).join('、'),
+    park: document.getElementById('r-park').value,
+    style: selectedStyle, suitable: suitableTags.join('、'),
+    imgEntrance: document.getElementById('img-entrance').value,
+    imgMenu: document.getElementById('img-menu').value,
+    envImgs: envImgs.map(id=>document.getElementById(id)?.value||'').filter(Boolean),
+    ratings
+  };
+
+  const allSteps = [
+    {label:'搜尋餐廳基本資料（電話、地標、標籤）',key:'info'},
+    {label:'搜尋主廚／老闆故事',key:'story'},
+    ...validDishes.map(d=>({label:`搜尋「${d.name}」描述`,key:'dish_'+d.id})),
+    {label:'撰寫完整部落格文章',key:'article'},
+    {label:'組裝 HTML 輸出',key:'html'}
+  ];
+
+  const markStep = (key, status) => {
+    setProgress(
+      Math.round((allSteps.filter((_,i)=>allSteps[i].status==='done').length/allSteps.length)*90),
+      status==='active' ? '處理中…' : '搜尋中…',
+      allSteps.map(s=>({label:s.label, status: s.status||'wait'}))
+    );
+    const s = allSteps.find(x=>x.key===key);
+    if(s) s.status = status;
+    setProgress(
+      Math.round((allSteps.filter(s=>s.status==='done').length/allSteps.length)*90),
+      allSteps.find(s=>s.status==='active')?.label||'處理中…',
+      allSteps.map(s=>({label:s.label, status:s.status||'wait'}))
+    );
+  };
+
+  try {
+    // ── Step 1: Restaurant info (phone, landmark, tags, line) ──
+    markStep('info','active');
+    const infoPrompt = `請搜尋「${info.name}」餐廳（地址：${info.addr}），找出以下資訊：
+1. 電話號碼
+2. 附近最知名的2-3個大地標（捷運站、知名景點、醫院等）
+3. Line官方帳號或訂位連結（如有）
+4. 6-8個反映這間餐廳特色的繁體中文標籤
+
+只回傳JSON，格式：
+{"phone":"","landmark":["",""],"lineUrl":"","tags":["","",""]}`;
+    let autoPhone='', autoLandmark=[], autoLineUrl='', autoTags=[];
+    try {
+      const {text:t1} = await callAI(infoPrompt, true, 800);
+      const m = t1.match(/\{[\s\S]*?\}/);
+      if(m){ const j=JSON.parse(m[0]); autoPhone=j.phone||''; autoLandmark=j.landmark||[]; autoLineUrl=j.lineUrl||''; autoTags=j.tags||[]; }
+      document.getElementById('auto-phone').innerHTML = autoPhone||'（搜尋未找到）';
+      document.getElementById('auto-line').innerHTML = autoLineUrl ? `<a href="${autoLineUrl}" style="color:var(--accent)">${autoLineUrl}</a>` : '（搜尋未找到）';
+      document.getElementById('auto-landmark').innerHTML = autoLandmark.map(l=>`<span class="auto-tag">${l}</span>`).join('');
+      document.getElementById('auto-tags').innerHTML = autoTags.map(t=>`<span class="auto-tag">${t}</span>`).join('');
+    } catch(e){}
+    markStep('info','done');
+
+    // ── Step 2: Chef/owner story ──
+    markStep('story','active');
+    let chefStory = '';
+    try {
+      const storyPrompt = `請搜尋近兩年台灣部落格或新聞關於「${info.name}」（${info.addr}）的文章，看是否有提到主廚或老闆的故事、理念、背景。如果有找到，用2-3句話摘要這段故事。如果完全沒有相關資訊，只回傳空字串""。只回傳純文字，不要JSON格式。`;
+      const {text:t2} = await callAI(storyPrompt, true, 600);
+      chefStory = t2.trim().replace(/^["']|["']$/g,'');
+      document.getElementById('auto-story').textContent = chefStory||'（未找到相關資訊）';
+    } catch(e){}
+    markStep('story','done');
+
+    // ── Step 3: Dish descriptions ──
+    for (const d of validDishes) {
+      markStep('dish_'+d.id, 'active');
+      try {
+        const dishPrompt = `你是擁有15年經驗的台灣頂級美食部落客，文字風格細膩文藝，善用感官描寫。
+
+請搜尋「${info.name}」（${info.addr}）的「${d.name}」相關評價與網路資料，然後以「${info.style}」風格，寫出一段精緻的餐點文字描述。
+
+要求：
+1. 先搜尋該餐點的真實評價與特色
+2. 依序鋪陳：視覺呈現 → 香氣 → 入口口感 → 味道層次 → 餘韻感受
+3. 文字風格符合「${info.style}」，有溫度、有畫面感
+4. 長度約120-160字
+5. 不要標題，直接輸出描述段落
+${d.note ? `補充資訊：${d.note}` : ''}`;
+        const {text:td, queries:tq} = await callAI(dishPrompt, true, 800);
+        const idx = dishes.findIndex(x=>x.id===d.id);
+        if(idx!==-1){dishes[idx].aiDesc=td.trim();dishes[idx].searchRef=tq.length?tq.join(' / '):'';}
+      } catch(e){
+        const idx=dishes.findIndex(x=>x.id===d.id);
+        if(idx!==-1) dishes[idx].aiDesc=`這道${d.name}是${info.name}的招牌之一，食材精選、工序講究，展現出主廚對料理的一貫堅持。入口的瞬間，層次感在舌尖緩緩展開，每一口都像是一段值得細細品味的味覺旅程。`;
+      }
+      renderDishes();
+      markStep('dish_'+d.id,'done');
+    }
+
+    // ── Step 4: Article prose ──
+    markStep('article','active');
+    const dishSummary = validDishes.map(d=>`- ${d.name}：${(d.aiDesc||'').slice(0,60)}…`).join('\n');
+    const hoursText = info.open&&info.close ? `${info.open}–${info.close}` : '';
+    const closedText = info.closedDays ? `每${info.closedDays}公休` : '';
+    const landmarkText = autoLandmark.join('、');
+
+    const articlePrompt = `你是台灣最具文藝氣息的美食部落客，文字風格參考以下兩篇文章的精神：
+1. 禎美樓食記風格：「港都裡的一個小天地，關於慢食文化與新中菜的餐廳哲學」——用哲學視角切入，空間描寫有底蘊，菜色描述有層次
+2. 微光森林食記風格：「推開門的瞬間，山城的濕氣被隔絕在外，光線透進玻璃屋裡」——詩意開場，帶讀者入境，細膩感受空間與食物的共鳴
+
+請根據以下資訊，生成完整部落格文章所需的JSON內容：
+
+餐廳：${info.name}（${info.type}）
+地址：${info.addr}
+附近地標：${landmarkText}
+價格：${info.price}
+適合族群：${info.suitable||'不限'}
+語言風格：${info.style}
+主廚故事：${chefStory||'無'}
+餐點列表：
+${dishSummary}
+
+回傳JSON（不要其他文字）：
+{
+  "seoTitle": "【地區美食】${info.name}｜核心概念描述，附近大地標（60字內）",
+  "seoDesc": "160字內meta description，自然帶入關鍵字",
+  "seoKeywords": ["關鍵字1","關鍵字2","關鍵字3","關鍵字4","關鍵字5"],
+  "conceptTitle": "一句帶出餐廳靈魂的文藝標題（15-25字，不用加餐廳名）",
+  "opening": "詩意開場白，2-3段，每段2-3句，讓讀者先感受氛圍再認識餐廳",
+  "chefSection": "主廚/老闆故事段落（如有資訊則寫，沒有則回傳空字串）",
+  "ambianceTitle": "環境段落的h2小標（8-12字）",
+  "ambiance": "環境氛圍描寫，2-3段，融入空間感、光線、細節",
+  "menuSectionTitle": "菜色段落的h2小標（8-12字）",
+  "verdict": "總評與推薦語，1-2段，有情感有溫度，自然收尾",
+  "faq": [
+    {"q":"問題一","a":"回答一"},
+    {"q":"問題二","a":"回答二"},
+    {"q":"問題三","a":"回答三"},
+    {"q":"問題四","a":"回答四"}
+  ]
+}`;
+    const {text:ta} = await callAI(articlePrompt, false, 3000);
+    let art;
+    try {
+      const m=ta.match(/\{[\s\S]*\}/); art=JSON.parse(m?m[0]:ta);
+    } catch(e) {
+      art={
+        seoTitle:`【${info.addr.slice(0,5)}美食】${info.name}｜${info.type}推薦`,
+        seoDesc:`${info.name}完整食記，${validDishes.map(d=>d.name).join('、')}等招牌料理詳細介紹，${info.addr}，${info.price}。`,
+        seoKeywords:[info.name,info.type+'推薦','美食'],
+        conceptTitle:`關於一頓飯，與一個讓人想留下來的地方`,
+        opening:`走進${info.name}的那一刻，你會明白為什麼有些地方值得特地前來。\n\n${info.type}的香氣在空氣中緩緩流動，光線以恰到好處的角度落進室內，讓人不自覺放慢了腳步。\n\n這裡沒有什麼刻意的張揚，卻有一種讓人想安靜坐下、好好用一頓飯的力量。`,
+        chefSection:'',
+        ambianceTitle:'一個讓人想留下來的空間',
+        ambiance:`${info.name}的空間設計透著一種內斂的美感，不追求豪奢，而是把細節藏進每一處角落。\n\n桌椅的擺設留有足夠的距離，讓談話不被打擾，也讓視線能夠自在遊走。光線的安排恰如其分，白天有自然光的溫柔，入夜後則有暖燈的陪伴。`,
+        menuSectionTitle:'值得細細品味的每一道',
+        verdict:`整體而言，${info.name}是一間讓人吃完會想再回來的餐廳。不只是因為食物好吃，更是因為這裡有一種讓人舒服的節奏。\n\n如果你也在尋找一個能好好用餐、好好交流的地方，${info.name}值得你放進口袋名單。`,
+        faq:[
+          {q:`${info.name}需要預約嗎？`,a:`建議事先透過電話或官方管道預約，以確保有座位。`},
+          {q:`${info.name}的價格大概是多少？`,a:`均消約${info.price}，詳細菜單可參考店內菜單或官方頁面。`},
+          {q:`${info.name}適合幾個人一起去？`,a:`適合${info.suitable||'各種人數'}前往，建議依用途選擇適合的用餐時段。`},
+          {q:`${info.name}停車方便嗎？`,a:`${info.park||'建議搭乘大眾運輸前往，或查詢附近停車場資訊。'}`}
+        ]
+      };
+    }
+    markStep('article','done');
+
+    // ── Step 5: Build HTML ──
+    markStep('html','active');
+    const starStr = n => '★'.repeat(n)+'☆'.repeat(5-n);
+    const slug = `${info.name}`.replace(/\s+/g,'-').toLowerCase().replace(/[^\w\u4e00-\u9fff-]/g,'');
+    const envImgList = info.envImgs.filter(Boolean);
+    const hoursDisplay = [hoursText, closedText].filter(Boolean).join('，');
+
+    const dishesHTML = validDishes.map(d => `
+<h3>${d.name}</h3>
+${d.imgUrl?`<figure>\n  <img src="${d.imgUrl}" alt="${info.name} ${d.name}" loading="lazy" />\n  <figcaption>${info.name} — ${d.name}</figcaption>\n</figure>`:''}
+<p>${d.aiDesc||''}</p>`).join('\n');
+
+    const faqHTML = (art.faq||[]).map(f=>`<div class="faq-item">
+  <div class="faq-q">${f.q}</div>
+  <div class="faq-a">${f.a}</div>
+</div>`).join('\n');
+
+    const infoRows = [
+      `<tr><td>店名</td><td>${info.name}</td></tr>`,
+      info.addr?`<tr><td>地址</td><td>${info.addr}</td></tr>`:'',
+      autoPhone?`<tr><td>電話</td><td>${autoPhone}</td></tr>`:'',
+      hoursDisplay?`<tr><td>營業時間</td><td>${hoursDisplay}</td></tr>`:'',
+      `<tr><td>價格</td><td>${info.price}</td></tr>`,
+      info.park?`<tr><td>停車</td><td>${info.park}</td></tr>`:'',
+      autoLineUrl?`<tr><td>訂位</td><td><a href="${autoLineUrl}">${autoLineUrl}</a></td></tr>`:'',
+    ].filter(Boolean).join('\n');
+
+    const ratingsHTML = Object.entries({食物:ratings.food,服務:ratings.service,環境:ratings.env,'CP值':ratings.cp})
+      .filter(([,v])=>v>0)
+      .map(([k,v])=>`<div class="rating-row"><span class="rating-lbl">${k}</span><span class="rating-stars">${starStr(v)}</span></div>`).join('');
+
+    generatedHTML = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${art.seoTitle}</title>
+<meta name="description" content="${art.seoDesc}">
+<meta name="keywords" content="${(art.seoKeywords||[]).join(',')}">
+<meta property="og:title" content="${art.seoTitle}">
+<meta property="og:description" content="${art.seoDesc}">
+<meta property="og:type" content="article">
+<meta name="robots" content="index,follow">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;color:#1a1714;line-height:1.9;background:#faf8f5;font-size:16px}
+.container{max-width:780px;margin:0 auto;padding:2.5rem 1.5rem}
+h1{font-family:'Noto Serif TC',serif;font-size:1.85rem;font-weight:500;line-height:1.4;margin-bottom:.6rem;letter-spacing:-.01em}
+h2{font-family:'Noto Serif TC',serif;font-size:1.25rem;font-weight:500;margin:2.5rem 0 1rem;padding-bottom:.5rem;border-bottom:1px solid #e8e4de}
+h3{font-size:1.05rem;font-weight:500;margin:1.8rem 0 .5rem;color:#2a2520}
+p{margin-bottom:1.1rem;color:#2a2520}
+.concept-title{font-family:'Noto Serif TC',serif;font-size:1rem;color:#8a7060;margin-bottom:1.5rem;font-weight:300;letter-spacing:.04em;font-style:italic}
+.meta-bar{font-size:.8rem;color:#8a8480;margin-bottom:1.5rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tag-pill{padding:2px 10px;border-radius:20px;background:#f0ebe4;color:#6a5848;font-size:.78rem}
+.photo-entrance img,.photo-menu img{width:100%;max-height:360px;object-fit:cover;border-radius:10px;margin:1rem 0}
+.env-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:1rem 0}
+.env-grid img{width:100%;height:200px;object-fit:cover;border-radius:8px}
+figure{margin:1rem 0}
+figure img{width:100%;max-height:340px;object-fit:cover;border-radius:10px}
+figcaption{font-size:.78rem;color:#8a8480;text-align:center;margin-top:4px}
+.dish-block{background:#fff;border:1px solid #ede9e2;border-radius:10px;padding:1.25rem 1.5rem;margin:1rem 0}
+.info-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1rem 0}
+.info-table td{padding:8px 12px;border-bottom:1px solid #f0ece6;vertical-align:top}
+.info-table td:first-child{color:#8a8480;width:100px;white-space:nowrap}
+.rating-box{background:#fff;border:1px solid #ede9e2;border-radius:10px;padding:1.25rem;margin:1rem 0}
+.rating-row{display:flex;align-items:center;gap:12px;padding:5px 0;border-bottom:1px solid #f5f2ee}
+.rating-row:last-child{border:none}
+.rating-lbl{width:60px;font-size:.85rem;color:#8a8480}
+.rating-stars{color:#e8a020;letter-spacing:2px;font-size:1.1rem}
+.verdict-block{background:#f5f0e8;border-left:3px solid #8b5e3c;padding:1.25rem 1.5rem;border-radius:0 10px 10px 0;margin:1.5rem 0}
+.faq-item{border-bottom:1px solid #ede9e2;padding:1rem 0}
+.faq-item:last-child{border:none}
+.faq-q{font-weight:500;margin-bottom:.4rem;color:#1a1714}
+.faq-a{font-size:.9rem;color:#4a4540;line-height:1.8}
+footer{text-align:center;padding:2.5rem 0;font-size:.8rem;color:#b0aca6;border-top:1px solid #ede9e2;margin-top:3rem}
+a{color:#8b5e3c}
+@media(max-width:600px){h1{font-size:1.5rem}.container{padding:1.5rem 1rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<article>
+
+<h1>${art.seoTitle}</h1>
+<p class="concept-title">${art.conceptTitle||''}</p>
+<div class="meta-bar">
+  <span>${info.name}</span>
+  <span>·</span>
+  <span>${info.type}</span>
+  ${autoTags.slice(0,4).map(t=>`<span class="tag-pill">${t}</span>`).join('')}
+</div>
+
+${info.imgEntrance?`<div class="photo-entrance"><img src="${info.imgEntrance}" alt="${info.name} 門口" /></div>`:''}
+
+${(art.opening||'').split('\n\n').filter(Boolean).map(p=>`<p>${p}</p>`).join('')}
+
+${art.chefSection?`<blockquote style="border-left:3px solid #c8b8a8;padding:.8rem 1.2rem;margin:1.5rem 0;color:#4a4540;font-style:italic">${art.chefSection}</blockquote>`:''}
+
+<h2>${art.ambianceTitle||'空間與氛圍'}</h2>
+${envImgList.length?`<div class="env-grid">${envImgList.map(u=>`<img src="${u}" alt="${info.name} 環境" loading="lazy" />`).join('')}</div>`:''}
+${(art.ambiance||'').split('\n\n').filter(Boolean).map(p=>`<p>${p}</p>`).join('')}
+
+<h2>${info.name} 店家資訊</h2>
+<table class="info-table"><tbody>${infoRows}</tbody></table>
+${info.imgMenu?`<div class="photo-menu"><img src="${info.imgMenu}" alt="${info.name} 菜單" /></div>`:''}
+
+<h2>${art.menuSectionTitle||'招牌餐點'}</h2>
+${validDishes.map(d=>`<div class="dish-block">\n<h3>${d.name}</h3>\n${d.imgUrl?`<figure><img src="${d.imgUrl}" alt="${info.name} ${d.name}" loading="lazy" /><figcaption>${info.name} — ${d.name}</figcaption></figure>`:''}\n<p>${d.aiDesc||''}</p>\n</div>`).join('\n')}
+
+${ratingsHTML?`<h2>整體評分</h2><div class="rating-box">${ratingsHTML}</div>`:''}
+
+<h2>編輯總評</h2>
+<div class="verdict-block">${(art.verdict||'').split('\n\n').filter(Boolean).map(p=>`<p>${p}</p>`).join('')}</div>
+
+${faqHTML?`<h2>常見問題</h2>${faqHTML}`:''}
+
+<p style="font-size:.8rem;color:#b0aca6;margin-top:2rem"><em>${(art.seoKeywords||[]).join('、')}</em></p>
+
+</article>
+<footer>本文由 AI 美食部落格產生器 Pro v3 生成 · ${new Date().toLocaleDateString('zh-TW')}</footer>
+</div>
+</body>
+</html>`;
+    markStep('html','done');
+    setProgress(100,'✓ 生成完成！',allSteps.map(s=>({...s,status:'done'})));
+
+    // Show results
+    document.getElementById('seo-title-preview').textContent = art.seoTitle||'';
+    document.getElementById('seo-url-preview').textContent = `https://yoursite.com/${slug}/`;
+    document.getElementById('seo-desc-preview').textContent = art.seoDesc||'';
+    document.getElementById('html-out').value = generatedHTML;
+    document.getElementById('meta-out').value = `<title>${art.seoTitle}</title>\n<meta name="description" content="${art.seoDesc}">\n<meta name="keywords" content="${(art.seoKeywords||[]).join(',')}">\n<meta property="og:title" content="${art.seoTitle}">\n<meta property="og:description" content="${art.seoDesc}">\n<meta property="og:type" content="article">\n<meta name="robots" content="index,follow">`;
+    document.getElementById('out-section').style.display = 'block';
+    document.getElementById('out-section').scrollIntoView({behavior:'smooth'});
+
+  } catch(err) {
+    document.getElementById('gen-progress').style.display = 'none';
+    let msg = '發生錯誤：\n\n';
+    if(err.message.includes('401')) msg+='❌ API Key 無效，請重新設定';
+    else if(err.message.includes('429')) msg+='❌ 請求過於頻繁，請稍後再試';
+    else msg+=err.message;
+    alert(msg);
+  }
+  document.getElementById('gen-btn').disabled = false;
+}
+
+function copyHTML(){ navigator.clipboard.writeText(generatedHTML).then(()=>alert('✅ HTML 已複製！')); }
+function copyMeta(){ navigator.clipboard.writeText(document.getElementById('meta-out').value).then(()=>alert('✅ Meta Tags 已複製！')); }
+function downloadHTML(){
+  const a=document.createElement('a');
+  a.href='data:text/html;charset=utf-8,'+encodeURIComponent(generatedHTML);
+  a.download=(document.getElementById('r-name').value||'blog').replace(/\s+/g,'_')+'_blog.html';
+  a.click();
+}
+
+init();
+</script>
+</body>
+</html>
