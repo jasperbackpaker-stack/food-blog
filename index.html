@@ -209,11 +209,14 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
   <div class="card">
-    <div class="card-title">AI 自動搜尋 <span class="ai-tag">生成時自動補齊</span></div>
+    <div class="card-title">聯絡 & 社群資訊</div>
     <div class="grid2">
-      <div class="fgrp"><label>電話</label><div class="auto-info" id="auto-phone">生成時自動搜尋…</div></div>
-      <div class="fgrp"><label>Line 訂位 / 官網</label><div class="auto-info" id="auto-line">生成時自動搜尋…</div></div>
+      <div class="fgrp"><label>訂位網址（Line / 官網）</label><input type="url" id="r-booking" placeholder="https://lin.ee/... 或官網網址" oninput="saveLS()" /></div>
+      <div class="fgrp"><label>餐廳 Instagram 網址</label><input type="url" id="r-ig" placeholder="https://www.instagram.com/..." oninput="saveLS()" /></div>
     </div>
+  </div>
+  <div class="card">
+    <div class="card-title">AI 自動搜尋 <span class="ai-tag">生成時自動補齊</span></div>
     <div class="fgrp"><label>附近大地標</label><div class="auto-info" id="auto-landmark">根據地址自動搜尋…</div></div>
     <div class="fgrp"><label>特色標籤</label><div class="auto-info" id="auto-tags">搜尋餐廳口碑自動生成…</div></div>
   </div>
@@ -366,7 +369,7 @@ function saveLS(){
   try{
     const d={
       rName:v('r-name'),rType:v('r-type'),rAddr:v('r-addr'),rPrice:v('r-price'),
-      rPhone:v('r-phone'),rPark:v('r-park'),rOpen:v('r-open'),rClose:v('r-close'),
+      rPhone:v('r-phone'),rBooking:v('r-booking'),rIg:v('r-ig'),rPark:v('r-park'),rOpen:v('r-open'),rClose:v('r-close'),
       closedDays:[...document.querySelectorAll('.day-cb:checked')].map(c=>c.value),
       imgEntrance:v('img-entrance'),imgMenu:v('img-menu'),
       envImgs:envImgs.map(id=>document.getElementById(id)?.value||'').filter(Boolean),
@@ -385,6 +388,8 @@ function loadLS(){
     if(d.rAddr)document.getElementById('r-addr').value=d.rAddr;
     if(d.rPrice)document.getElementById('r-price').value=d.rPrice;
     if(d.rPhone)document.getElementById('r-phone').value=d.rPhone;
+    if(d.rBooking)document.getElementById('r-booking').value=d.rBooking;
+    if(d.rIg)document.getElementById('r-ig').value=d.rIg;
     if(d.rPark)document.getElementById('r-park').value=d.rPark;
     if(d.rOpen)document.getElementById('r-open').value=d.rOpen;
     if(d.rClose)document.getElementById('r-close').value=d.rClose;
@@ -563,7 +568,7 @@ async function generate(){
     name:rName,type:v('r-type'),addr:rAddr,price:v('r-price'),
     open:v('r-open'),close:v('r-close'),
     closedDays:[...document.querySelectorAll('.day-cb:checked')].map(c=>c.value).join('、'),
-    park:v('r-park'),style:selectedStyle,suitable:suitableTags.join('、'),
+    booking:v('r-booking'),ig:v('r-ig'),park:v('r-park'),style:selectedStyle,suitable:suitableTags.join('、'),
     imgEntrance:v('img-entrance'),imgMenu:v('img-menu'),
     envImgs:envImgs.map(id=>document.getElementById(id)?.value||'').filter(Boolean),
     ratings
@@ -586,8 +591,7 @@ async function generate(){
       const m=t1.match(/\{[\s\S]*?\}/);
       if(m){const j=JSON.parse(m[0]);autoPhone=j.phone||'';autoLandmark=j.landmark||[];autoLineUrl=j.lineUrl||'';autoTags=j.tags||[];}
       if(!v('r-phone'))autoPhone=autoPhone||'';
-      document.getElementById('auto-phone').innerHTML=autoPhone||'（未找到）';
-      document.getElementById('auto-line').innerHTML=autoLineUrl?`<a href="${autoLineUrl}" style="color:var(--accent)">${autoLineUrl}</a>`:'（未找到）';
+      // phone/line now manual input
       document.getElementById('auto-landmark').innerHTML=autoLandmark.map(l=>`<span class="auto-tag">${l}</span>`).join('');
       document.getElementById('auto-tags').innerHTML=autoTags.map(t=>`<span class="auto-tag">${t}</span>`).join('');
     }catch(e){}
@@ -665,7 +669,7 @@ async function generate(){
       "description":art.seoDesc,
       "address":{"@type":"PostalAddress","streetAddress":info.addr,"addressCountry":"TW"},
       "telephone":autoPhone||undefined,
-      "url":autoLineUrl||undefined,
+      "url":info.booking||undefined,
       "servesCuisine":info.type,
       "priceRange":info.price,
       "openingHours":hoursDisplay||undefined,
@@ -711,7 +715,8 @@ ${imgHtml}
       hoursDisplay?`<tr><td>營業時間</td><td>${hoursDisplay}</td></tr>`:'',
       `<tr><td>價格</td><td>${info.price}</td></tr>`,
       info.park?`<tr><td>停車</td><td>${info.park}</td></tr>`:'',
-      autoLineUrl?`<tr><td>訂位</td><td><a href="${autoLineUrl}" target="_blank">${autoLineUrl}</a></td></tr>`:'',
+      info.booking?`<tr><td>訂位</td><td><a href="${info.booking}" target="_blank">${info.booking}</a></td></tr>`:'',
+      info.ig?`<tr><td>Instagram</td><td><a href="${info.ig}" target="_blank">${info.ig}</a></td></tr>`:'',
     ].filter(Boolean).join('\n');
 
     const faqHTML=(art.faq||[]).map(f=>`<div class="faq-item"><div class="faq-q">${f.q}</div><div class="faq-a">${f.a}</div></div>`).join('\n');
