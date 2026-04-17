@@ -566,44 +566,26 @@ async function generate(){
     }catch(e){}
     steps[0].st='done';setProgress(25,'餐廳資料完成',steps);
 
-    // ── STEP 2: 批次搜尋所有餐點（1次搜尋）──
-    steps[1].st='active';setProgress(30,`批次搜尋 ${vd.length} 道餐點…`,steps);
-    try{
-      const dishList=vd.map((d,i)=>`${i+1}.${d.name}${d.note?'('+d.note+')':''}`).join('、');
-      const p2=`你是台灣資深美食部落客。請搜尋「${info.name}」（${info.addr}，${info.type}）的以下餐點網路評價：${dishList}。
-
-針對每道菜，以「${info.style}」風格寫出【精準30字SEO描述】，要求：
-- 包含具體食材或烹調方式
-- 包含1個口感形容詞
-- 自然帶入餐廳名稱或地區
-- 適合AI爬蟲和搜尋引擎讀取
-
-只回傳JSON陣列：[{"name":"餐點名","desc":"30字描述"},...]`;
-      const t2=await callAI(p2,true,800);
-      const m=t2.match(/\[[\s\S]*?\]/);
-      if(m){
-        const arr=JSON.parse(m[0]);
-        arr.forEach(item=>{
-          const idx=dishes.findIndex(d=>d.name===item.name);
-          if(idx!==-1){dishes[idx].aiDesc=item.desc||'';}
-        });
-        // 備用：沒搜到的用餐廳+料理類型生成不同描述
-        vd.forEach((d,i)=>{
-          const idx=dishes.findIndex(x=>x.id===d.id);
-          if(idx!==-1&&!dishes[idx].aiDesc){
-            const fallbacks=['鮮嫩食材精心烹製','道地風味層次豐富','選用優質食材現點現做','招牌料理口感絕佳','每日新鮮現做好滋味'];
-            dishes[idx].aiDesc=`${info.name}${d.name}，${fallbacks[i%5]}，${info.type}必點推薦。`;
-          }
-        });
-      }
-    }catch(e){
-      vd.forEach((d,i)=>{
-        const idx=dishes.findIndex(x=>x.id===d.id);
-        const keywords=['鮮嫩多汁','香氣四溢','口感層次豐富','軟嫩入味','酥脆迷人'];
-        if(idx!==-1)dishes[idx].aiDesc=`${info.name}${d.name}${d.note?'，'+d.note:''}，${keywords[i%5]}，${info.type}饕客必點好選擇。`;
-      });
+    // ── STEP 2: 分批搜尋餐點（每批4道，間隔3秒，避免超限）──
+    steps[1].st='active';setProgress(30,`分批搜尋 ${vd.length} 道餐點…`,steps);
+    const batchSize=4;
+    const kw=['鮮嫩多汁入口即化','香氣四溢令人垂涎','口感層次豐富細膩','軟嫩入味道地風格','酥脆迷人現點現做'];
+    for(let b=0;b<vd.length;b+=batchSize){
+      const batch=vd.slice(b,b+batchSize);
+      const bNum=Math.floor(b/batchSize)+1;
+      const bTotal=Math.ceil(vd.length/batchSize);
+      setProgress(30+Math.round((b/vd.length)*22),`搜尋第 ${bNum}/${bTotal} 批（${batch.map(d=>d.name).join('、')}）…`,steps);
+      if(b>0){await new Promise(r=>setTimeout(r,4000));}
+      try{
+        const dl=batch.map(d=>d.name+(d.note?'('+d.note+')':'')).join('、');
+        const p2=`搜尋「${info.name}」(${info.type})餐點評價：${dl}。每道寫30字SEO描述，含食材口感。JSON:[{"name":"","desc":""}]`;
+        const t2=await callAI(p2,true,500);
+        const m=t2.match(/\[[\s\S]*?\]/);
+        if(m){JSON.parse(m[0]).forEach(item=>{const idx=dishes.findIndex(d=>d.name===item.name);if(idx!==-1&&item.desc)dishes[idx].aiDesc=item.desc;});}
+      }catch(e){}
+      batch.forEach((d,i)=>{const idx=dishes.findIndex(x=>x.id===d.id);if(idx!==-1&&!dishes[idx].aiDesc)dishes[idx].aiDesc=`${info.name}${d.name}${d.note?'，'+d.note:''}，${kw[(b+i)%5]}，${info.type}必點好選擇。`;});
+      renderDishes();
     }
-    renderDishes();
     steps[1].st='done';setProgress(55,'餐點描述完成',steps);
 
     // ── STEP 3: 撰寫文章（無搜尋，省token）──
