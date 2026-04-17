@@ -180,13 +180,14 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <div class="fgrp"><label>完整地址 *</label><input type="text" id="r-addr" placeholder="例：403臺中市西區公益路250號1樓" oninput="saveLS()" /><div class="hint">AI 根據地址自動搜尋附近大地標</div></div>
     <div class="grid2">
-      <div class="fgrp"><label>價格區間</label>
-        <select id="r-price" onchange="saveLS()">
-          <option>100元以下</option><option>100–500元</option>
-          <option>500–1000元</option><option>1000元以上</option>
-        </select>
-      </div>
+      <div class="fgrp"><label>餐廳電話（選填）</label><input type="text" id="r-phone" placeholder="例：04-2345-6789" oninput="saveLS()" /><div class="hint">填入後優先使用，不填則 AI 自動搜尋</div></div>
       <div class="fgrp"><label>停車資訊（選填）</label><input type="text" id="r-park" placeholder="例：附近有收費停車場" oninput="saveLS()" /></div>
+    </div>
+    <div class="fgrp"><label>價格區間</label>
+      <select id="r-price" onchange="saveLS()">
+        <option>100元以下</option><option>100–500元</option>
+        <option>500–1000元</option><option>1000元以上</option>
+      </select>
     </div>
   </div>
   <div class="card">
@@ -217,16 +218,40 @@ textarea{resize:vertical;min-height:70px}
     <div class="fgrp"><label>特色標籤</label><div class="auto-info" id="auto-tags">搜尋餐廳口碑自動生成…</div></div>
   </div>
   <div class="card">
-    <div class="card-title">適合族群（可多選）</div>
+    <div class="card-title">適合族群 & 餐廳特色（可多選）</div>
+    <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">聚餐用途</div>
     <div class="suitable-wrap" id="suitable-wrap">
       <span class="suitable-tag" data-v="家庭聚餐">家庭聚餐</span>
       <span class="suitable-tag" data-v="情侶約會">情侶約會</span>
       <span class="suitable-tag" data-v="朋友聚會">朋友聚會</span>
       <span class="suitable-tag" data-v="商務宴客">商務宴客</span>
-      <span class="suitable-tag" data-v="獨旅一人">獨旅一人</span>
-      <span class="suitable-tag" data-v="親子同樂">親子同樂</span>
-      <span class="suitable-tag" data-v="網美打卡">網美打卡</span>
       <span class="suitable-tag" data-v="長輩聚餐">長輩聚餐</span>
+      <span class="suitable-tag" data-v="親子同樂">親子同樂</span>
+      <span class="suitable-tag" data-v="生日慶生">生日慶生</span>
+      <span class="suitable-tag" data-v="畢業聚餐">畢業聚餐</span>
+      <span class="suitable-tag" data-v="尾牙春酒">尾牙春酒</span>
+      <span class="suitable-tag" data-v="同學會">同學會</span>
+    </div>
+    <div style="font-size:11px;color:var(--ink3);margin-top:10px;margin-bottom:8px">用餐型態</div>
+    <div class="suitable-wrap">
+      <span class="suitable-tag" data-v="獨旅一人">獨旅一人</span>
+      <span class="suitable-tag" data-v="下午茶">下午茶</span>
+      <span class="suitable-tag" data-v="早午餐">早午餐</span>
+      <span class="suitable-tag" data-v="宵夜">宵夜</span>
+      <span class="suitable-tag" data-v="外帶便當">外帶便當</span>
+      <span class="suitable-tag" data-v="網美打卡">網美打卡</span>
+      <span class="suitable-tag" data-v="外國觀光客">外國觀光客</span>
+      <span class="suitable-tag" data-v="學生族群">學生族群</span>
+    </div>
+    <div style="font-size:11px;color:var(--ink3);margin-top:10px;margin-bottom:8px">環境特色</div>
+    <div class="suitable-wrap">
+      <span class="suitable-tag" data-v="寵物友善餐廳">寵物友善餐廳</span>
+      <span class="suitable-tag" data-v="包廂私密">包廂私密</span>
+      <span class="suitable-tag" data-v="景觀餐廳">景觀餐廳</span>
+      <span class="suitable-tag" data-v="不限時">不限時</span>
+      <span class="suitable-tag" data-v="免費停車">免費停車</span>
+      <span class="suitable-tag" data-v="素食可">素食可</span>
+      <span class="suitable-tag" data-v="無障礙空間">無障礙空間</span>
     </div>
   </div>
   <div style="text-align:right;margin-top:8px"><button class="btn btn-accent" onclick="goTo(2,document.getElementById('nav2'))">下一步 →</button></div>
@@ -341,7 +366,7 @@ function saveLS(){
   try{
     const d={
       rName:v('r-name'),rType:v('r-type'),rAddr:v('r-addr'),rPrice:v('r-price'),
-      rPark:v('r-park'),rOpen:v('r-open'),rClose:v('r-close'),
+      rPhone:v('r-phone'),rPark:v('r-park'),rOpen:v('r-open'),rClose:v('r-close'),
       closedDays:[...document.querySelectorAll('.day-cb:checked')].map(c=>c.value),
       imgEntrance:v('img-entrance'),imgMenu:v('img-menu'),
       envImgs:envImgs.map(id=>document.getElementById(id)?.value||'').filter(Boolean),
@@ -359,6 +384,7 @@ function loadLS(){
     if(d.rType)document.getElementById('r-type').value=d.rType;
     if(d.rAddr)document.getElementById('r-addr').value=d.rAddr;
     if(d.rPrice)document.getElementById('r-price').value=d.rPrice;
+    if(d.rPhone)document.getElementById('r-phone').value=d.rPhone;
     if(d.rPark)document.getElementById('r-park').value=d.rPark;
     if(d.rOpen)document.getElementById('r-open').value=d.rOpen;
     if(d.rClose)document.getElementById('r-close').value=d.rClose;
@@ -553,12 +579,13 @@ async function generate(){
   try{
     // ── STEP 1: 餐廳資訊（1次搜尋）──
     steps[0].st='active';setProgress(5,'搜尋餐廳資料中…',steps);
-    let autoPhone='',autoLandmark=[],autoLineUrl='',autoTags=[];
+    let autoPhone=v('r-phone')||'',autoLandmark=[],autoLineUrl='',autoTags=[];
     try{
       const p1=`搜尋「${info.name}」餐廳（地址：${info.addr}），找出：1.電話 2.附近2-3個大地標（捷運站/景點/醫院）3.Line官方帳號或訂位連結 4.6個餐廳特色標籤。只回傳JSON：{"phone":"","landmark":[""],"lineUrl":"","tags":[""]}`;
       const t1=await callAI(p1,true,600);
       const m=t1.match(/\{[\s\S]*?\}/);
       if(m){const j=JSON.parse(m[0]);autoPhone=j.phone||'';autoLandmark=j.landmark||[];autoLineUrl=j.lineUrl||'';autoTags=j.tags||[];}
+      if(!v('r-phone'))autoPhone=autoPhone||'';
       document.getElementById('auto-phone').innerHTML=autoPhone||'（未找到）';
       document.getElementById('auto-line').innerHTML=autoLineUrl?`<a href="${autoLineUrl}" style="color:var(--accent)">${autoLineUrl}</a>`:'（未找到）';
       document.getElementById('auto-landmark').innerHTML=autoLandmark.map(l=>`<span class="auto-tag">${l}</span>`).join('');
