@@ -643,16 +643,16 @@ async function generate(){
     try{const m=t3a.match(/\{[\s\S]*\}/);artA=JSON.parse(m?m[0]:t3a);}catch(e){}
     try{const m=t3b.match(/\{[\s\S]*\}/);artB=JSON.parse(m?m[0]:t3b);}catch(e){}
     const t3=JSON.stringify({...artA,...artB});
-    let art={};
-    try{art={...artA,...artB};}catch(e2){art={};}
-    catch(e){art={
+    // 合併結果，備用預設值
+    const fallbackArt={
       seoTitle:`【${info.addr.slice(0,6)}美食】${info.name}｜${info.type}推薦，鄰近${autoLandmark[0]||'市中心'}`,
       seoDesc:`${info.name}完整食記，${vd.map(d=>d.name).join('、')}等招牌料理詳細介紹。${info.addr}，${info.price}，${info.type}必吃推薦。`,
       seoKeywords:[info.name,info.type+'推薦',info.addr.slice(0,6)+'美食',info.name+'菜單',info.name+'評價'],
-      conceptTitle:`一個讓人想慢下來的用餐空間`,
+      conceptTitle:'一個讓人想慢下來的用餐空間',
       opening:`走進${info.name}的那一刻，會明白為什麼有些地方值得特地前來。\n\n${info.type}的香氣在空氣中緩緩流動，讓人不自覺放慢了腳步。`,
-      ambianceTitle:`空間與氛圍`,ambiance:`${info.name}的空間透著內斂的美感，細節藏在每一處角落。\n\n光線的安排恰如其分，讓用餐成為一種享受。`,
-      menuTitle:`招牌餐點`,
+      ambianceTitle:'空間與氛圍',
+      ambiance:`${info.name}的空間透著內斂的美感，細節藏在每一處角落。\n\n光線的安排恰如其分，讓用餐成為一種享受。`,
+      menuTitle:'招牌餐點',
       verdict:`整體而言，${info.name}是一間讓人吃完會想再回來的餐廳。食物好吃、環境舒適，${info.addr.slice(0,6)}地區值得收進口袋名單。`,
       faq:[
         {q:`${info.name}在哪裡？`,a:`${info.name}位於${info.addr}，鄰近${autoLandmark[0]||'市區'}，交通便利。`},
@@ -660,7 +660,8 @@ async function generate(){
         {q:`${info.name}有哪些推薦餐點？`,a:`招牌推薦${vd.slice(0,3).map(d=>d.name).join('、')}等，每道都是主廚精心製作。`},
         {q:`${info.name}的營業時間？`,a:`${hoursStr||'請洽官方管道確認最新營業時間。'}`}
       ]
-    };}
+    };
+    const art={...fallbackArt,...artA,...artB};
     steps[2].st='done';setProgress(80,'文章完成',steps);
 
     // ── STEP 4: 組裝HTML ──
