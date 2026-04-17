@@ -619,23 +619,32 @@ async function generate(){
     }
     steps[1].st='done';setProgress(55,'餐點描述完成',steps);
 
-    // ── STEP 3: 撰寫文章（無搜尋，省token）──
+    // ── STEP 3: 撰寫文章（拆成2次，避免超限）──
     steps[2].st='active';setProgress(60,'AI 撰寫文章中…',steps);
-    const dishSum=vd.map(d=>`${d.name}：${(d.aiDesc||'').slice(0,25)}`).join('；');
     const hoursStr=[info.open&&info.close?`${info.open}–${info.close}`:'',info.closedDays?`${info.closedDays}公休`:''].filter(Boolean).join('，');
     const landmarkStr=autoLandmark.join('、');
+    const lm0=landmarkStr.split('、')[0]||'';
 
-    const p3=`你是台灣頂級美食部落客，文章風格參考禎美樓食記（哲學視角、空間有底蘊）和微光森林食記（詩意開場、細膩感受）。
+    // 等待避免超限
+    await new Promise(r=>setTimeout(r,4000));
 
-餐廳：${info.name}（${info.type}）地址：${info.addr}，鄰近${landmarkStr}，價格${info.price}，適合${info.suitable||'各族群'}
-餐點：${dishSum}
+    // 第一次：SEO+開場+環境
+    const p3a=`台灣美食部落客，${info.style}。餐廳:${info.name}(${info.type})${info.addr}，鄰近${lm0}，${info.price}，適合${info.suitable||'各族群'}。JSON:{"seoTitle":"【地區美食】${info.name}｜特色，鄰近${lm0}","seoDesc":"150字meta","seoKeywords":["k1","k2","k3","k4","k5"],"conceptTitle":"副標20字","opening":"開場2段","ambianceTitle":"環境h2","ambiance":"環境2段","menuTitle":"餐點h2"}`;
+    const t3a=await callAI(p3a,false,1200);
 
-用「${info.style}」生成JSON（不要其他文字）：
-{"seoTitle":"【地區】${info.name}｜核心概念，鄰近${landmarkStr.split('、')[0]||''}（60字內）","seoDesc":"160字內meta description","seoKeywords":["關鍵字1","關鍵字2","關鍵字3","關鍵字4","關鍵字5"],"conceptTitle":"帶出餐廳靈魂的文藝副標（20字內）","opening":"詩意開場2段，每段2句","ambianceTitle":"環境段落h2（10字內）","ambiance":"環境描寫2段","menuTitle":"餐點段落h2（10字內）","verdict":"總評推薦1段","faq":[{"q":"問題","a":"回答"},{"q":"問題","a":"回答"},{"q":"問題","a":"回答"},{"q":"問題","a":"回答"}]}`;
+    await new Promise(r=>setTimeout(r,3000));
 
-    const t3=await callAI(p3,false,2000);
-    let art;
-    try{const m=t3.match(/\{[\s\S]*\}/);art=JSON.parse(m?m[0]:t3);}
+    // 第二次：總評+FAQ
+    const p3b=`台灣美食部落客，${info.style}。${info.name}(${info.type})${info.addr}${info.price}。JSON:{"verdict":"總評1段","faq":[{"q":"Q1","a":"A1"},{"q":"Q2","a":"A2"},{"q":"Q3","a":"A3"},{"q":"Q4","a":"A4"}]}`;
+    const t3b=await callAI(p3b,false,800);
+
+    // 合併兩次結果
+    let artA={},artB={};
+    try{const m=t3a.match(/\{[\s\S]*\}/);artA=JSON.parse(m?m[0]:t3a);}catch(e){}
+    try{const m=t3b.match(/\{[\s\S]*\}/);artB=JSON.parse(m?m[0]:t3b);}catch(e){}
+    const t3=JSON.stringify({...artA,...artB});
+    let art={};
+    try{art={...artA,...artB};}catch(e2){art={};}
     catch(e){art={
       seoTitle:`【${info.addr.slice(0,6)}美食】${info.name}｜${info.type}推薦，鄰近${autoLandmark[0]||'市中心'}`,
       seoDesc:`${info.name}完整食記，${vd.map(d=>d.name).join('、')}等招牌料理詳細介紹。${info.addr}，${info.price}，${info.type}必吃推薦。`,
